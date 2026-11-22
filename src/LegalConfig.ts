@@ -15,3 +15,4 @@ export const LEGAL = {
 } as const;
 
 export type LegalTab = 'privacidade' | 'cookies' | 'termos';
+
