@@ -367,7 +367,7 @@ export function Hero() {
                 Código que{'\n'}coloca seu{'\n'}negócio <T style={{ color: C.lime }}>à frente.</T>
               </T>
               <T style={{ color: '#aaafa2', fontSize: desc, lineHeight: desc * 1.65, maxWidth: bp.md ? 480 : 450, marginTop: bp.md ? 24 : 29 }}>
-                Sites que posicionam. Sistemas que simplificam.{'\n'}Tecnologia sob medida para a próxima fase{'\n'} da sua empresa.
+                Sites que posicionam. Sistemas que simplificam.{'\n'}Tecnologia sob medida para a próxima fase{'\n'}da sua empresa.
               </T>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: bp.sm ? 20 : 28, marginTop: bp.sm ? 26 : 30 }}>
                 <Button

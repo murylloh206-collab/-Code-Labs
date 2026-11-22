@@ -5,7 +5,7 @@ import { Anchor, T, useNav } from '../ui';
 
 export function Footer() {
   const bp = useBreakpoints();
-  const { openPrivacy } = useNav();
+  const { openPrivacy, openCookiePrefs } = useNav();
   const year = new Date().getFullYear();
 
   const taglineSize = bp.sm ? rem(1.8) : bp.md ? rem(1.4) : rem(2.2);
@@ -102,10 +102,10 @@ export function Footer() {
 
           <View
             style={{
-              flexDirection: 'row',
+              flexDirection: bp.md ? 'column' : 'row',
               justifyContent: 'space-between',
               alignItems: 'center',
-              gap: 20,
+              gap: bp.md ? 10 : 20,
               borderTopWidth: 1,
               borderTopColor: '#dce1d4',
               paddingTop: 20,
@@ -114,12 +114,29 @@ export function Footer() {
             <T style={{ color: '#78836c', fontSize: bottomSize, lineHeight: bp.sm ? bottomSize * 1.6 : undefined, flexShrink: 1 }}>
               © {year} Code Labs. Ideias que viram possibilidades.
             </T>
-            <Pressable testID="privacy-open" role="button" onPress={openPrivacy}>
-              <T style={{ color: '#78836c', fontSize: bottomSize, textDecorationLine: 'underline', lineHeight: bp.sm ? bottomSize * 1.6 : undefined }}>
-                Privacidade nesta prévia
-              </T>
-            </Pressable>
-            <T style={{ color: '#78836c', fontSize: bottomSize, lineHeight: bp.sm ? bottomSize * 1.6 : undefined, flexShrink: 1, textAlign: 'right' }}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: 14 }}>
+              <Pressable testID="privacy-open" role="button" onPress={() => openPrivacy('privacidade')}>
+                <T style={{ color: '#78836c', fontSize: bottomSize, textDecorationLine: 'underline', lineHeight: bp.sm ? bottomSize * 1.6 : undefined }}>
+                  Política de Privacidade
+                </T>
+              </Pressable>
+              <Pressable testID="terms-open" role="button" onPress={() => openPrivacy('termos')}>
+                <T style={{ color: '#78836c', fontSize: bottomSize, textDecorationLine: 'underline', lineHeight: bp.sm ? bottomSize * 1.6 : undefined }}>
+                  Termos de Uso
+                </T>
+              </Pressable>
+              <Pressable testID="cookies-open" role="button" onPress={() => openPrivacy('cookies')}>
+                <T style={{ color: '#78836c', fontSize: bottomSize, textDecorationLine: 'underline', lineHeight: bp.sm ? bottomSize * 1.6 : undefined }}>
+                  Política de Cookies
+                </T>
+              </Pressable>
+              <Pressable testID="cookie-prefs-open" role="button" onPress={openCookiePrefs}>
+                <T style={{ color: '#78836c', fontSize: bottomSize, textDecorationLine: 'underline', lineHeight: bp.sm ? bottomSize * 1.6 : undefined }}>
+                  Preferências de cookies
+                </T>
+              </Pressable>
+            </View>
+            <T style={{ color: '#78836c', fontSize: bottomSize, lineHeight: bp.sm ? bottomSize * 1.6 : undefined, flexShrink: 1, textAlign: bp.md ? 'center' : 'right' }}>
               Design &amp; desenvolvimento com intenção.
             </T>
           </View>

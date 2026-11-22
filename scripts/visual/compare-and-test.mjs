@@ -248,12 +248,34 @@ async function testMotionAndFlows(browser, baseUrl) {
   const faqExpanded = await page.getByTestId('faq-0').getAttribute('aria-expanded');
   report.flows.faqToggle = faqExpanded === 'true';
 
-  // e) Modal Privacidade
+  // e) Banner de cookies + Modal Jurídico + Favicon
+  const faviconHref = await page.evaluate(() => document.querySelector('link[rel="icon"]')?.getAttribute('href') || '');
+  const cookieVisibleInit = await page.getByTestId('cookie-banner').isVisible();
+  await page.getByTestId('cookie-accept-all').click();
+  const cookieHiddenAfterAccept = !(await page.getByTestId('cookie-banner').isVisible());
+  const cookieStored = await page.evaluate(() => localStorage.getItem('codelabs_cookie_consent_v1'));
+
   await page.getByTestId('privacy-open').click();
   const modalVisible = await page.getByTestId('privacy-dialog').isVisible();
+  await page.getByTestId('legal-tab-termos').click();
+  const termosOk = (await page.getByTestId('privacy-dialog').textContent())?.includes('Marco Civil') || (await page.getByTestId('privacy-dialog').textContent())?.includes('Código de Defesa do Consumidor');
   await page.getByTestId('privacy-close').click();
   const modalClosed = !(await page.getByTestId('privacy-dialog').isVisible());
-  report.flows.privacyModal = { opened: modalVisible, closed: modalClosed };
+
+  await page.getByTestId('cookie-prefs-open').click();
+  const cookieReopened = await page.getByTestId('cookie-banner').isVisible();
+  await page.getByTestId('cookie-essential').click();
+
+  report.flows.legalAndCookies = {
+    faviconHrefPresent: Boolean(faviconHref),
+    cookieVisibleInit,
+    cookieHiddenAfterAccept,
+    cookieStoredOk: Boolean(cookieStored && cookieStored.includes('"analytics":true')),
+    cookieReopened,
+    modalOpened: modalVisible,
+    termosOk,
+    modalClosed,
+  };
   report.flows.consoleErrors = consoleErrors;
 
   const videoPath = await page.video()?.path();

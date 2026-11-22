@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useRef, useState } from 'react';
 import { Linking, Platform, Pressable, Text, View, type GestureResponderEvent, type TextProps, type ViewStyle, type StyleProp, type TextStyle } from 'react-native';
 import { C, FONT, web } from './theme';
-import { useReducedMotion } from './motion';
+import type { LegalTab } from './LegalConfig';
 
 /** Texto base: Arial, como o `font-family` do :root da referência. */
 export const T = React.forwardRef<any, TextProps>(function T({ style, ...rest }, ref) {
@@ -13,7 +13,8 @@ type Nav = {
   register: (id: string, y: number) => void;
   reduced: boolean;
   toast: (msg: string) => void;
-  openPrivacy: () => void;
+  openPrivacy: (tab?: LegalTab) => void;
+  openCookiePrefs: () => void;
   chooseService: (service: string) => void;
 };
 export const NavContext = createContext<Nav>({
@@ -22,6 +23,7 @@ export const NavContext = createContext<Nav>({
   reduced: false,
   toast: () => {},
   openPrivacy: () => {},
+  openCookiePrefs: () => {},
   chooseService: () => {},
 });
 export const useNav = () => useContext(NavContext);
