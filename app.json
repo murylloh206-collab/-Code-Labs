@@ -1,11 +1,12 @@
 {
   "expo": {
-    "name": "CodeLabs",
-    "slug": "CodeLabs",
+    "name": "<Code> Labs — Sua próxima fase, em código.",
+    "slug": "code-labs",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#101110",
     "ios": {
       "supportsTablet": true
     },
@@ -19,7 +20,13 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "bundler": "metro",
+      "output": "single",
+      "favicon": "./assets/favicon.png",
+      "name": "<Code> Labs — Sua próxima fase, em código.",
+      "description": "A Code Labs cria sites, CRMs, sistemas e automações sob medida. Transforme sua presença digital e a operação da sua empresa em uma vantagem real.",
+      "themeColor": "#101110",
+      "backgroundColor": "#101110"
     }
   }
 }

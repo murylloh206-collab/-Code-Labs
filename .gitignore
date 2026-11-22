@@ -39,3 +39,7 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# local visual test outputs
+scripts/visual/out/
+scripts/visual/reference.html
