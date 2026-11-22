@@ -17,7 +17,7 @@ export function Footer() {
       style={{
         backgroundColor: '#fff',
         paddingTop: 55,
-        paddingBottom: 22,
+        paddingBottom: 28,
         borderTopWidth: 1,
         borderTopColor: '#dce1d4',
       }}
@@ -117,17 +117,27 @@ export function Footer() {
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: 14 }}>
               <Pressable testID="privacy-open" role="button" onPress={() => openPrivacy('privacidade')}>
                 <T style={{ color: '#78836c', fontSize: bottomSize, textDecorationLine: 'underline', lineHeight: bp.sm ? bottomSize * 1.6 : undefined }}>
-                  Política de Privacidade
+                  Política de Privacidade (LGPD)
+                </T>
+              </Pressable>
+              <Pressable testID="cookies-open" role="button" onPress={() => openPrivacy('cookies')}>
+                <T style={{ color: '#78836c', fontSize: bottomSize, textDecorationLine: 'underline', lineHeight: bp.sm ? bottomSize * 1.6 : undefined }}>
+                  Política &amp; Logs de Cookies
+                </T>
+              </Pressable>
+              <Pressable testID="ropa-open" role="button" onPress={() => openPrivacy('ropa')}>
+                <T style={{ color: '#78836c', fontSize: bottomSize, textDecorationLine: 'underline', lineHeight: bp.sm ? bottomSize * 1.6 : undefined }}>
+                  ROPA &amp; Segurança
+                </T>
+              </Pressable>
+              <Pressable testID="dpo-open" role="button" onPress={() => openPrivacy('titular')}>
+                <T style={{ color: '#78836c', fontSize: bottomSize, textDecorationLine: 'underline', lineHeight: bp.sm ? bottomSize * 1.6 : undefined }}>
+                  Canal do Titular / DPO
                 </T>
               </Pressable>
               <Pressable testID="terms-open" role="button" onPress={() => openPrivacy('termos')}>
                 <T style={{ color: '#78836c', fontSize: bottomSize, textDecorationLine: 'underline', lineHeight: bp.sm ? bottomSize * 1.6 : undefined }}>
                   Termos de Uso
-                </T>
-              </Pressable>
-              <Pressable testID="cookies-open" role="button" onPress={() => openPrivacy('cookies')}>
-                <T style={{ color: '#78836c', fontSize: bottomSize, textDecorationLine: 'underline', lineHeight: bp.sm ? bottomSize * 1.6 : undefined }}>
-                  Política de Cookies
                 </T>
               </Pressable>
               <Pressable testID="cookie-prefs-open" role="button" onPress={openCookiePrefs}>
@@ -145,4 +155,3 @@ export function Footer() {
     </View>
   );
 }
-

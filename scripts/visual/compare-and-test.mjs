@@ -218,12 +218,18 @@ async function testMotionAndFlows(browser, baseUrl) {
   const errGoal = await page.getByTestId('brief-error').textContent();
 
   await page.getByTestId('brief-goal').fill('Quero automatizar o atendimento e integrar o CRM da empresa.');
+  // Testa bloqueio quando checkbox LGPD não está marcado (não pré-marcado por padrão)
+  await page.getByTestId('brief-review').click();
+  const errLgpd = await page.getByTestId('brief-error').textContent();
+
   // Voltar ao passo 1 e retornar ao passo 2 para conferir preservação dos dados
   await page.getByTestId('brief-back').click();
   await page.getByTestId('brief-next').click();
   const preservedName = await page.getByTestId('brief-name').inputValue();
   const preservedGoal = await page.getByTestId('brief-goal').inputValue();
 
+  // Marca o checkbox explícito de consentimento LGPD
+  await page.getByTestId('brief-lgpd-consent').click();
   await page.getByTestId('brief-review').click();
   const reviewText = await page.getByTestId('brief-card').textContent();
 
@@ -237,8 +243,12 @@ async function testMotionAndFlows(browser, baseUrl) {
   report.flows.brief = {
     errNameOk: errName?.includes('Preencha seu nome'),
     errGoalOk: errGoal?.includes('pelo menos 15 caracteres'),
+    errLgpdCheckboxUncheckedByDefaultOk: errLgpd?.includes('consentimento com a Política de Privacidade'),
     preservedDataOk: preservedName === 'Muryllo Teste' && preservedGoal.includes('automatizar'),
-    reviewSummaryOk: reviewText?.includes('Automação ou integração') && reviewText?.includes('Muryllo Teste · Empresa Demo'),
+    reviewSummaryOk:
+      reviewText?.includes('Automação ou integração') &&
+      reviewText?.includes('Muryllo Teste · Empresa Demo') &&
+      reviewText?.includes('CL-LGPD-'),
     downloadFilename: download.suggestedFilename(),
     toastTruthful: toastAfterDownload?.includes('Nenhum dado foi enviado'),
   };
@@ -248,31 +258,49 @@ async function testMotionAndFlows(browser, baseUrl) {
   const faqExpanded = await page.getByTestId('faq-0').getAttribute('aria-expanded');
   report.flows.faqToggle = faqExpanded === 'true';
 
-  // e) Banner de cookies + Modal Jurídico + Favicon
+  // e) Banner de cookies granular + Bloqueio técnico + Selo flutuante + Central LGPD (5 abas + DSAR) + Favicon
   const faviconHref = await page.evaluate(() => document.querySelector('link[rel="icon"]')?.getAttribute('href') || '');
   const cookieVisibleInit = await page.getByTestId('cookie-banner').isVisible();
+  const initialTechBlock = await page.evaluate(() => window.__CODELABS_LGPD_CONSENT__);
+
   await page.getByTestId('cookie-accept-all').click();
   const cookieHiddenAfterAccept = !(await page.getByTestId('cookie-banner').isVisible());
-  const cookieStored = await page.evaluate(() => localStorage.getItem('codelabs_cookie_consent_v1'));
+  const floatingBadgeVisible = await page.getByTestId('cookie-floating-badge').isVisible();
+  const cookieStored = await page.evaluate(() => localStorage.getItem('codelabs_lgpd_consent_v2'));
 
   await page.getByTestId('privacy-open').click();
   const modalVisible = await page.getByTestId('privacy-dialog').isVisible();
+  await page.getByTestId('legal-tab-ropa').click();
+  const ropaOk = (await page.getByTestId('privacy-dialog').textContent())?.includes('ROPA-01');
+  await page.getByTestId('legal-tab-titular').click();
+  await page.getByTestId('dsar-name').fill('Muryllo Titular');
+  await page.getByTestId('dsar-email').fill('muryllo@exemplo.com.br');
+  await page.getByTestId('dsar-consent-checkbox').click();
+  await page.getByTestId('dsar-submit').click();
+  const dsarProtocolVisible = await page.getByTestId('dsar-protocol-box').isVisible();
+
   await page.getByTestId('legal-tab-termos').click();
-  const termosOk = (await page.getByTestId('privacy-dialog').textContent())?.includes('Marco Civil') || (await page.getByTestId('privacy-dialog').textContent())?.includes('Código de Defesa do Consumidor');
+  const termosOk = (await page.getByTestId('privacy-dialog').textContent())?.includes('Marco Civil');
   await page.getByTestId('privacy-close').click();
   const modalClosed = !(await page.getByTestId('privacy-dialog').isVisible());
 
-  await page.getByTestId('cookie-prefs-open').click();
+  await page.getByTestId('cookie-floating-badge').click();
   const cookieReopened = await page.getByTestId('cookie-banner').isVisible();
   await page.getByTestId('cookie-essential').click();
+  const techBlockAfterReject = await page.evaluate(() => window.__CODELABS_LGPD_CONSENT__);
 
   report.flows.legalAndCookies = {
-    faviconHrefPresent: Boolean(faviconHref),
+    faviconIsDataUriLogo: faviconHref.startsWith('data:image/png;base64,'),
     cookieVisibleInit,
+    initialBlockedAnalytics: initialTechBlock?.analytics === false && initialTechBlock?.marketing === false,
     cookieHiddenAfterAccept,
+    floatingBadgeVisible,
     cookieStoredOk: Boolean(cookieStored && cookieStored.includes('"analytics":true')),
     cookieReopened,
+    rejectedBlocksAnalytics: techBlockAfterReject?.analytics === false && techBlockAfterReject?.marketing === false,
     modalOpened: modalVisible,
+    ropaOk,
+    dsarProtocolVisible,
     termosOk,
     modalClosed,
   };

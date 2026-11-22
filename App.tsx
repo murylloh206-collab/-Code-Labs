@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Image, Platform, ScrollView, View } from 'react-native';
+import { Platform, ScrollView, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { C, useBreakpoints, web } from './src/theme';
 import { useReducedMotion } from './src/motion';
@@ -15,10 +15,23 @@ import { Brief, type BriefState } from './src/sections/Brief';
 import { Faq } from './src/sections/Faq';
 import { Footer } from './src/sections/Footer';
 import { PrivacyModal, Toast } from './src/PrivacyModal';
-import { CookieBanner, loadCookieConsent, saveCookieConsent } from './src/CookieBanner';
+import { CookieBanner } from './src/CookieBanner';
+import {
+  applyTechnicalCookieBlocking,
+  loadCurrentConsent,
+  recordConsentDecision,
+  type ConsentAction,
+  type CookieCategories,
+} from './src/ConsentManager';
 import type { LegalTab } from './src/LegalConfig';
+import { FAVICON_DATA_URI } from './src/faviconData';
 
-const FAVICON_ASSET = require('./assets/favicon.png');
+const DEFAULT_CATEGORIES: CookieCategories = {
+  essential: true,
+  functional: false,
+  analytics: false,
+  marketing: false,
+};
 
 export default function App() {
   const bp = useBreakpoints();
@@ -32,33 +45,49 @@ export default function App() {
   const [toastMsg, setToastMsg] = useState('');
   const [legalOpen, setLegalOpen] = useState(false);
   const [legalTab, setLegalTab] = useState<LegalTab>('privacidade');
-  const [cookieBannerVisible, setCookieBannerVisible] = useState(() => loadCookieConsent() === null);
-  const [cookieAnalytics, setCookieAnalytics] = useState(() => loadCookieConsent()?.analytics ?? false);
+
+  const [consentRecord, setConsentRecord] = useState(() => loadCurrentConsent());
+  const [cookieBannerVisible, setCookieBannerVisible] = useState(() => loadCurrentConsent() === null);
+  const [cookieCategories, setCookieCategories] = useState<CookieCategories>(
+    () => loadCurrentConsent()?.categories ?? DEFAULT_CATEGORIES,
+  );
+
   const [brief, setBrief] = useState<BriefState>({
     step: 1,
     service: 'Site ou landing page',
     name: '',
     company: '',
     goal: '',
+    lgpdConsent: false,
   });
 
-  // Ajusta metadados, favicon e rolagem do documento no navegador.
+  // Aplica o bloqueio técnico de cookies não essenciais logo na montagem
+  useEffect(() => {
+    const existing = loadCurrentConsent();
+    if (existing) {
+      setConsentRecord(existing);
+      setCookieCategories(existing.categories);
+      applyTechnicalCookieBlocking(existing.categories);
+    } else {
+      applyTechnicalCookieBlocking(DEFAULT_CATEGORIES);
+      setCookieBannerVisible(true);
+    }
+  }, []);
+
+  // Ajusta metadados, favicon da logo (substituindo qualquer cache de /favicon.ico) e rolagem no navegador
   useEffect(() => {
     if (Platform.OS !== 'web' || typeof document === 'undefined') return;
     document.documentElement.lang = 'pt-BR';
     document.title = '<Code> Labs — Sua próxima fase, em código.';
 
-    const resolved = Image.resolveAssetSource?.(FAVICON_ASSET);
-    const faviconUri = typeof FAVICON_ASSET === 'string' ? FAVICON_ASSET : resolved?.uri;
-    if (faviconUri) {
-      let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
-      if (!link) {
-        link = document.createElement('link');
-        link.rel = 'icon';
-        document.head.appendChild(link);
-      }
+    // Remove links antigos de ícone e injeta o Data URI PNG da logo + /favicon.png
+    document.querySelectorAll('link[rel*="icon"]').forEach((el) => el.remove());
+    for (const rel of ['icon', 'shortcut icon', 'apple-touch-icon']) {
+      const link = document.createElement('link');
+      link.rel = rel;
       link.type = 'image/png';
-      link.href = faviconUri;
+      link.href = FAVICON_DATA_URI;
+      document.head.appendChild(link);
     }
 
     const style = document.createElement('style');
@@ -111,7 +140,7 @@ export default function App() {
   const toast = useCallback((msg: string) => {
     setToastMsg(msg);
     if (toastTimer.current) clearTimeout(toastTimer.current);
-    toastTimer.current = setTimeout(() => setToastMsg(''), 4000);
+    toastTimer.current = setTimeout(() => setToastMsg(''), 4500);
   }, []);
 
   const openPrivacy = useCallback((tab: LegalTab = 'privacidade') => {
@@ -123,15 +152,26 @@ export default function App() {
     setCookieBannerVisible(true);
   }, []);
 
-  const handleSaveCookies = useCallback(
-    (analytics: boolean) => {
-      saveCookieConsent(analytics);
-      setCookieAnalytics(analytics);
+  const handleCookieDecision = useCallback(
+    (action: ConsentAction, partial: Omit<CookieCategories, 'essential'>) => {
+      const rec = recordConsentDecision(action, partial);
+      setConsentRecord(rec);
+      setCookieCategories(rec.categories);
       setCookieBannerVisible(false);
-      toast(analytics ? 'Preferências salvas: todos os cookies aceitos.' : 'Preferências salvas: apenas cookies essenciais.');
+      if (action === 'accept_all') {
+        toast(`Consentimento registrado (${rec.consentId}): todos os cookies autorizados.`);
+      } else if (action === 'reject_non_essential' || action === 'revoked') {
+        toast(`Registro (${rec.consentId}): apenas cookies estritamente necessários ativos.`);
+      } else {
+        toast(`Preferências personalizadas salvas (${rec.consentId}).`);
+      }
     },
     [toast],
   );
+
+  const handleRevokeConsent = useCallback(() => {
+    handleCookieDecision('revoked', { functional: false, analytics: false, marketing: false });
+  }, [handleCookieDecision]);
 
   const chooseService = useCallback((service: string) => {
     setBrief((s) => ({ ...s, service, step: 1 }));
@@ -180,8 +220,10 @@ export default function App() {
         )}
         <CookieBanner
           visible={cookieBannerVisible}
-          initialAnalytics={cookieAnalytics}
-          onSave={handleSaveCookies}
+          categories={cookieCategories}
+          hasDecision={Boolean(consentRecord)}
+          onDecide={handleCookieDecision}
+          onOpenBanner={() => setCookieBannerVisible(true)}
           onOpenLegal={openPrivacy}
         />
         <PrivacyModal
@@ -190,6 +232,7 @@ export default function App() {
           onChangeTab={setLegalTab}
           onClose={() => setLegalOpen(false)}
           onOpenCookiePrefs={openCookiePrefs}
+          onRevokeConsent={handleRevokeConsent}
         />
         <Toast message={toastMsg} />
       </View>

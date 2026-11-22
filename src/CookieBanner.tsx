@@ -3,93 +3,131 @@ import { Platform, Pressable, View } from 'react-native';
 import { C, rem, useBreakpoints, web } from './theme';
 import { Button, T, useNav } from './ui';
 import type { LegalTab } from './LegalConfig';
+import type { ConsentAction, CookieCategories } from './ConsentManager';
 
-export const COOKIE_STORAGE_KEY = 'codelabs_cookie_consent_v1';
-
-export type CookieConsent = {
-  version: 1;
-  timestamp: string;
-  essential: true;
-  analytics: boolean;
-};
-
-export function loadCookieConsent(): CookieConsent | null {
-  if (Platform.OS !== 'web' || typeof window === 'undefined') return null;
-  try {
-    const raw = window.localStorage.getItem(COOKIE_STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (parsed && parsed.version === 1 && typeof parsed.analytics === 'boolean') return parsed;
-  } catch {
-    // ignore storage access errors
-  }
-  return null;
-}
-
-export function saveCookieConsent(analytics: boolean): CookieConsent {
-  const consent: CookieConsent = {
-    version: 1,
-    timestamp: new Date().toISOString(),
-    essential: true,
-    analytics,
-  };
-  if (Platform.OS === 'web' && typeof window !== 'undefined') {
-    try {
-      window.localStorage.setItem(COOKIE_STORAGE_KEY, JSON.stringify(consent));
-    } catch {
-      // ignore storage errors
-    }
-  }
-  return consent;
-}
+const CATEGORY_INFO: {
+  key: keyof Omit<CookieCategories, 'essential'>;
+  title: string;
+  basis: string;
+  desc: string;
+}[] = [
+  {
+    key: 'functional',
+    title: 'Funcionalidade e Preferências',
+    basis: 'Base Legal: Consentimento (Art. 7º, I da LGPD)',
+    desc: 'Permitem lembrar escolhas opcionais de interface e personalização. Desativados por padrão até autorização.',
+  },
+  {
+    key: 'analytics',
+    title: 'Análise de Audiência e Desempenho',
+    basis: 'Base Legal: Consentimento (Art. 7º, I da LGPD)',
+    desc: 'Medem visitas e desempenho das páginas de forma agregada (ex.: Google Analytics). Bloqueados tecnicamente até autorização.',
+  },
+  {
+    key: 'marketing',
+    title: 'Publicidade e Marketing',
+    basis: 'Base Legal: Consentimento (Art. 7º, I da LGPD)',
+    desc: 'Utilizados para mensuração de campanhas e anúncios (ex.: Pixel do Meta / Google Ads). Bloqueados tecnicamente até autorização.',
+  },
+];
 
 export function CookieBanner({
   visible,
-  initialAnalytics,
-  onSave,
+  categories,
+  hasDecision,
+  onDecide,
+  onOpenBanner,
   onOpenLegal,
 }: {
   visible: boolean;
-  initialAnalytics: boolean;
-  onSave: (analytics: boolean) => void;
+  categories: CookieCategories;
+  hasDecision: boolean;
+  onDecide: (action: ConsentAction, cats: Omit<CookieCategories, 'essential'>) => void;
+  onOpenBanner: () => void;
   onOpenLegal: (tab: LegalTab) => void;
 }) {
   const bp = useBreakpoints();
   const { reduced } = useNav();
   const [configuring, setConfiguring] = useState(false);
-  const [analytics, setAnalytics] = useState(initialAnalytics);
+  const [draft, setDraft] = useState({
+    functional: categories.functional,
+    analytics: categories.analytics,
+    marketing: categories.marketing,
+  });
 
   useEffect(() => {
-    setAnalytics(initialAnalytics);
-  }, [initialAnalytics, visible]);
+    setDraft({
+      functional: categories.functional,
+      analytics: categories.analytics,
+      marketing: categories.marketing,
+    });
+  }, [categories, visible]);
 
-  if (!visible) return null;
+  // Quando o banner já foi respondido e está fechado, exibe o selo flutuante permanente de governança LGPD
+  if (!visible) {
+    const activeCount = [categories.functional, categories.analytics, categories.marketing].filter(Boolean).length;
+    const statusLabel = activeCount === 0 ? 'Apenas essenciais' : activeCount === 3 ? 'Todos ativos' : `${activeCount + 1}/4 ativos`;
+    return (
+      <View
+        style={{
+          position: Platform.OS === 'web' ? ('fixed' as any) : 'absolute',
+          left: bp.sm ? 12 : 18,
+          bottom: bp.sm ? 12 : 18,
+          zIndex: 9990,
+        }}
+      >
+        <Pressable
+          testID="cookie-floating-badge"
+          role="button"
+          accessibilityLabel="Gerenciar cookies e privacidade LGPD"
+          onPress={onOpenBanner}
+          style={(s: any) => [
+            {
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 8,
+              backgroundColor: s.hovered ? '#22271e' : 'rgba(25,27,25,0.95)',
+              borderWidth: 1,
+              borderColor: '#525c46',
+              borderRadius: 999,
+              paddingVertical: 8,
+              paddingHorizontal: 14,
+              ...web({ backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', boxShadow: '0 8px 24px rgba(0,0,0,0.5)' }),
+            },
+          ]}
+        >
+          <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: C.lime }} />
+          <T style={{ color: C.paper, fontSize: rem(0.72), fontWeight: '700' }}>LGPD &amp; Cookies</T>
+          <T style={{ color: '#9fa894', fontSize: rem(0.68) }}>({statusLabel})</T>
+        </Pressable>
+      </View>
+    );
+  }
 
   return (
     <View
       testID="cookie-banner"
       role="dialog"
-      aria-label="Aviso e preferências de cookies"
+      aria-label="Controle de Privacidade e Consentimento de Cookies (LGPD)"
       style={{
         position: Platform.OS === 'web' ? ('fixed' as any) : 'absolute',
-        left: bp.sm ? 12 : 24,
-        right: bp.sm ? 12 : 24,
-        bottom: bp.sm ? 12 : 24,
-        zIndex: 90,
+        left: bp.sm ? 10 : 20,
+        right: bp.sm ? 10 : 20,
+        bottom: bp.sm ? 10 : 20,
+        zIndex: 9999,
         alignItems: 'center',
-        pointerEvents: 'box-none',
       }}
     >
       <View
         style={{
           width: '100%',
-          maxWidth: 980,
-          backgroundColor: '#191b19',
+          maxWidth: 1080,
+          backgroundColor: '#161915',
           borderWidth: 1,
-          borderColor: '#485041',
+          borderColor: '#5c6849',
           borderRadius: 12,
-          padding: bp.sm ? 18 : 24,
-          ...web({ boxShadow: '0 20px 50px rgba(0,0,0,0.65)' }),
+          padding: bp.sm ? 16 : 22,
+          ...web({ boxShadow: '0 24px 64px rgba(0,0,0,0.8)' }),
         }}
       >
         <View
@@ -101,32 +139,35 @@ export function CookieBanner({
           }}
         >
           <View style={{ flex: 1 }}>
-            <T style={{ color: C.paper, fontSize: rem(0.95), fontWeight: '700', marginBottom: 6 }}>
-              Sua privacidade e uso de cookies (LGPD)
-            </T>
-            <T style={{ color: '#b4bca9', fontSize: rem(0.8), lineHeight: rem(0.8) * 1.6 }}>
-              Utilizamos cookies estritamente necessários para o funcionamento do site e, somente com o seu consentimento, cookies opcionais de preferências e análise. Você pode aceitar todos, manter apenas os essenciais ou ajustar suas escolhas a qualquer momento. Leia nossa{' '}
-              <T
-                role="link"
-                onPress={() => onOpenLegal('privacidade')}
-                style={{ color: C.lime, textDecorationLine: 'underline' }}
-              >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
+              <View style={{ backgroundColor: C.lime, paddingVertical: 2, paddingHorizontal: 7, borderRadius: 4 }}>
+                <T style={{ color: C.ink, fontSize: rem(0.62), fontWeight: '700', letterSpacing: 0.5 }}>CONFORMIDADE LGPD / ANPD</T>
+              </View>
+              <T style={{ color: C.paper, fontSize: rem(0.95), fontWeight: '700' }}>
+                Controle de Cookies e Privacidade
+              </T>
+            </View>
+            <T style={{ color: '#b8c0ad', fontSize: rem(0.78), lineHeight: rem(0.78) * 1.58 }}>
+              Respeitamos sua privacidade conforme a Lei Geral de Proteção de Dados (Lei nº 13.709/2018). Cookies estritamente necessários operam por{' '}
+              <T style={{ color: '#e2e8d8', fontWeight: '700' }}>legítimo interesse</T> para segurança e funcionamento técnico. Scripts de funcionalidade, análise (ex.: Google Analytics) e publicidade (ex.: Meta Pixel) permanecem{' '}
+              <T style={{ color: C.lime, fontWeight: '700' }}>bloqueados tecnicamente</T> até seu consentimento explícito. Consulte nossa{' '}
+              <T role="link" onPress={() => onOpenLegal('privacidade')} style={{ color: C.lime, textDecorationLine: 'underline' }}>
                 Política de Privacidade
               </T>
               ,{' '}
-              <T
-                role="link"
-                onPress={() => onOpenLegal('cookies')}
-                style={{ color: C.lime, textDecorationLine: 'underline' }}
-              >
-                Política de Cookies
+              <T role="link" onPress={() => onOpenLegal('cookies')} style={{ color: C.lime, textDecorationLine: 'underline' }}>
+                Política &amp; Logs de Cookies
+              </T>
+              ,{' '}
+              <T role="link" onPress={() => onOpenLegal('ropa')} style={{ color: C.lime, textDecorationLine: 'underline' }}>
+                ROPA &amp; Segurança
+              </T>
+              ,{' '}
+              <T role="link" onPress={() => onOpenLegal('titular')} style={{ color: C.lime, textDecorationLine: 'underline' }}>
+                Canal do Titular (DPO)
               </T>{' '}
               e{' '}
-              <T
-                role="link"
-                onPress={() => onOpenLegal('termos')}
-                style={{ color: C.lime, textDecorationLine: 'underline' }}
-              >
+              <T role="link" onPress={() => onOpenLegal('termos')} style={{ color: C.lime, textDecorationLine: 'underline' }}>
                 Termos de Uso
               </T>
               .
@@ -146,48 +187,57 @@ export function CookieBanner({
                 testID="cookie-config"
                 role="button"
                 onPress={() => setConfiguring(true)}
-                style={{
-                  minHeight: 42,
-                  paddingVertical: 10,
-                  paddingHorizontal: 14,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                }}
-              >
-                <T style={{ color: '#c8cfbd', fontSize: rem(0.78), textDecorationLine: 'underline' }}>Preferências</T>
-              </Pressable>
-              <Pressable
-                testID="cookie-essential"
-                role="button"
-                onPress={() => onSave(false)}
                 style={(s: any) => [
                   {
                     minHeight: 42,
                     paddingVertical: 10,
-                    paddingHorizontal: 16,
+                    paddingHorizontal: 14,
                     borderWidth: 1,
-                    borderColor: '#55594e',
+                    borderColor: '#555d4c',
                     borderRadius: 7,
-                    backgroundColor: s.hovered ? '#252820' : 'transparent',
+                    backgroundColor: s.hovered ? '#23281f' : 'transparent',
                     justifyContent: 'center',
                     alignItems: 'center',
                   },
                   !reduced ? web({ transitionProperty: 'background-color', transitionDuration: '200ms' }) : null,
                 ]}
               >
-                <T style={{ color: C.paper, fontSize: rem(0.78), fontWeight: '700' }}>Apenas essenciais</T>
+                <T style={{ color: '#d5dec8', fontSize: rem(0.76), fontWeight: '600' }}>Personalizar</T>
               </Pressable>
+
+              <Pressable
+                testID="cookie-essential"
+                role="button"
+                onPress={() => onDecide('reject_non_essential', { functional: false, analytics: false, marketing: false })}
+                style={(s: any) => [
+                  {
+                    minHeight: 42,
+                    paddingVertical: 10,
+                    paddingHorizontal: 16,
+                    borderWidth: 1,
+                    borderColor: '#7b876b',
+                    borderRadius: 7,
+                    backgroundColor: s.hovered ? '#282e23' : '#1f241b',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  },
+                  !reduced ? web({ transitionProperty: 'background-color', transitionDuration: '200ms' }) : null,
+                ]}
+              >
+                <T style={{ color: C.paper, fontSize: rem(0.76), fontWeight: '700' }}>Recusar não essenciais</T>
+              </Pressable>
+
               <Button
                 label="Aceitar todos"
                 testID="cookie-accept-all"
-                onPress={() => onSave(true)}
+                onPress={() => onDecide('accept_all', { functional: true, analytics: true, marketing: true })}
                 style={{
                   minHeight: 42,
                   paddingVertical: 10,
                   paddingHorizontal: 18,
                   alignSelf: bp.sm ? 'stretch' : 'center',
                 }}
-                textStyle={{ fontSize: rem(0.78) }}
+                textStyle={{ fontSize: rem(0.76) }}
               />
             </View>
           )}
@@ -195,62 +245,129 @@ export function CookieBanner({
 
         {configuring && (
           <View style={{ marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line, gap: 12 }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 16 }}>
+            {/* Estritamente necessários */}
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: 16,
+                backgroundColor: '#1d221a',
+                padding: 12,
+                borderRadius: 8,
+                borderWidth: 1,
+                borderColor: '#31382b',
+              }}
+            >
               <View style={{ flex: 1 }}>
-                <T style={{ color: C.paper, fontSize: rem(0.82), fontWeight: '700' }}>Estritamente necessários</T>
-                <T style={{ color: '#9aa28f', fontSize: rem(0.74), marginTop: 3 }}>
-                  Garantem a navegação básica, segurança e o registro da sua escolha de consentimento. Sempre ativos.
+                <T style={{ color: C.paper, fontSize: rem(0.82), fontWeight: '700' }}>1. Cookies Estritamente Necessários</T>
+                <T style={{ color: C.lime, fontSize: rem(0.68), marginTop: 2 }}>
+                  Base Legal: Legítimo Interesse / Execução Técnica (Art. 7º, IX da LGPD)
+                </T>
+                <T style={{ color: '#9aa28f', fontSize: rem(0.73), marginTop: 4 }}>
+                  Indispensáveis para segurança, integridade da sessão e armazenamento da prova auditável do seu consentimento.
                 </T>
               </View>
               <View style={{ backgroundColor: '#283022', paddingVertical: 5, paddingHorizontal: 10, borderRadius: 4 }}>
-                <T style={{ color: C.lime, fontSize: rem(0.7), fontWeight: '700' }}>Sempre ativo</T>
+                <T style={{ color: C.lime, fontSize: rem(0.68), fontWeight: '700' }}>Sempre ativo</T>
               </View>
             </View>
 
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 16 }}>
-              <View style={{ flex: 1 }}>
-                <T style={{ color: C.paper, fontSize: rem(0.82), fontWeight: '700' }}>Preferências e análise</T>
-                <T style={{ color: '#9aa28f', fontSize: rem(0.74), marginTop: 3 }}>
-                  Permitem compreender o uso do site de forma agregada para melhorar desempenho e experiência. Opcionais.
-                </T>
-              </View>
-              <Pressable
-                testID="cookie-toggle-analytics"
-                role="switch"
-                aria-checked={analytics}
-                onPress={() => setAnalytics((v) => !v)}
-                style={{
-                  width: 48,
-                  height: 26,
-                  borderRadius: 13,
-                  backgroundColor: analytics ? C.lime : '#383d33',
-                  padding: 3,
-                  justifyContent: 'center',
-                  alignItems: analytics ? 'flex-end' : 'flex-start',
-                }}
-              >
-                <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: analytics ? C.ink : '#c1c5b8' }} />
-              </Pressable>
-            </View>
+            {/* Categorias granulares opcionais */}
+            {CATEGORY_INFO.map((cat, idx) => {
+              const active = draft[cat.key];
+              return (
+                <View
+                  key={cat.key}
+                  style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: 16,
+                    backgroundColor: '#1d221a',
+                    padding: 12,
+                    borderRadius: 8,
+                    borderWidth: 1,
+                    borderColor: active ? '#5c6e3b' : '#31382b',
+                  }}
+                >
+                  <View style={{ flex: 1 }}>
+                    <T style={{ color: C.paper, fontSize: rem(0.82), fontWeight: '700' }}>
+                      {idx + 2}. {cat.title}
+                    </T>
+                    <T style={{ color: '#8295ff', fontSize: rem(0.68), marginTop: 2 }}>{cat.basis}</T>
+                    <T style={{ color: '#9aa28f', fontSize: rem(0.73), marginTop: 4 }}>{cat.desc}</T>
+                  </View>
+                  <Pressable
+                    testID={`cookie-toggle-${cat.key}`}
+                    role="switch"
+                    aria-checked={active}
+                    onPress={() => setDraft((d) => ({ ...d, [cat.key]: !d[cat.key] }))}
+                    style={{
+                      width: 50,
+                      height: 28,
+                      borderRadius: 14,
+                      backgroundColor: active ? C.lime : '#383d33',
+                      padding: 3,
+                      justifyContent: 'center',
+                      alignItems: active ? 'flex-end' : 'flex-start',
+                    }}
+                  >
+                    <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: active ? C.ink : '#c1c5b8' }} />
+                  </Pressable>
+                </View>
+              );
+            })}
 
-            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginTop: 6 }}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 10, marginTop: 6 }}>
               <Pressable
                 role="button"
-                onPress={() => setConfiguring(false)}
-                style={{ minHeight: 40, paddingHorizontal: 14, justifyContent: 'center' }}
+                onPress={() => onOpenLegal('cookies')}
+                style={{ paddingVertical: 6 }}
               >
-                <T style={{ color: '#a3a79c', fontSize: rem(0.78) }}>Voltar</T>
+                <T style={{ color: C.lime, fontSize: rem(0.74), textDecorationLine: 'underline' }}>
+                  Ver registro de auditoria (logs) e detalhes técnicos
+                </T>
               </Pressable>
-              <Button
-                label="Salvar preferências"
-                testID="cookie-save-prefs"
-                onPress={() => {
-                  setConfiguring(false);
-                  onSave(analytics);
-                }}
-                style={{ minHeight: 40, paddingVertical: 10, paddingHorizontal: 18 }}
-                textStyle={{ fontSize: rem(0.78) }}
-              />
+
+              <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
+                <Pressable
+                  role="button"
+                  onPress={() => setConfiguring(false)}
+                  style={{ minHeight: 40, paddingHorizontal: 12, justifyContent: 'center' }}
+                >
+                  <T style={{ color: '#a3a79c', fontSize: rem(0.76) }}>Voltar</T>
+                </Pressable>
+                {hasDecision && (
+                  <Pressable
+                    role="button"
+                    onPress={() => {
+                      setConfiguring(false);
+                      onDecide('revoked', { functional: false, analytics: false, marketing: false });
+                    }}
+                    style={{
+                      minHeight: 40,
+                      paddingHorizontal: 14,
+                      borderWidth: 1,
+                      borderColor: '#9e4742',
+                      borderRadius: 7,
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <T style={{ color: '#ffb3ae', fontSize: rem(0.75), fontWeight: '700' }}>Revogar consentimento</T>
+                  </Pressable>
+                )}
+                <Button
+                  label="Salvar preferências"
+                  testID="cookie-save-prefs"
+                  onPress={() => {
+                    setConfiguring(false);
+                    onDecide('custom_preferences', draft);
+                  }}
+                  style={{ minHeight: 40, paddingVertical: 10, paddingHorizontal: 18 }}
+                  textStyle={{ fontSize: rem(0.76) }}
+                />
+              </View>
             </View>
           </View>
         )}
@@ -258,4 +375,3 @@ export function CookieBanner({
     </View>
   );
 }
-

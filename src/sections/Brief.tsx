@@ -4,6 +4,8 @@ import { C, clamp, FONT, gutter, rem, useBreakpoints, web } from '../theme';
 import { Button, openExternal, Section, T, useNav } from '../ui';
 import { Bolt, Code, Grid, Help, Site } from '../icons';
 import { Reveal } from '../Reveal';
+import { LEGAL } from '../LegalConfig';
+import { loadCurrentConsent, recordConsentDecision } from '../ConsentManager';
 
 /**
  * Configurar o número comercial, com DDI (ex.: '5511999999999'), antes do lançamento.
@@ -31,6 +33,8 @@ export type BriefState = {
   name: string;
   company: string;
   goal: string;
+  lgpdConsent?: boolean;
+  consentProtocol?: string;
 };
 
 export function Brief({
@@ -41,7 +45,7 @@ export function Brief({
   setState: React.Dispatch<React.SetStateAction<BriefState>>;
 }) {
   const bp = useBreakpoints();
-  const { toast, reduced } = useNav();
+  const { toast, reduced, openPrivacy } = useNav();
   const [error, setError] = useState('');
   const [copyFallback, setCopyFallback] = useState(false);
 
@@ -54,7 +58,7 @@ export function Brief({
   const metaSize = bp.sm ? rem(0.56) : rem(0.62);
 
   const briefText = () =>
-    `Olá, Code Labs! Quero conversar sobre um projeto.\n\nSolução: ${state.service}\nNome: ${state.name.trim()}\nEmpresa: ${state.company.trim() || 'A definir'}\n\nMeu desafio:\n${state.goal.trim()}\n\nVamos conversar sobre os próximos passos?`;
+    `Olá, Code Labs! Quero conversar sobre um projeto.\n\nSolução: ${state.service}\nNome: ${state.name.trim()}\nEmpresa: ${state.company.trim() || 'A definir'}\n\nMeu desafio:\n${state.goal.trim()}\n\nConsentimento LGPD (Política v${LEGAL.policyVersion}): Confirmado${state.consentProtocol ? ` (${state.consentProtocol})` : ''}\nVamos conversar sobre os próximos passos?`;
 
   const goToStep = (next: 1 | 2 | 3) => {
     setError('');
@@ -89,7 +93,23 @@ export function Brief({
       goalRef.current?.focus();
       return;
     }
-    setState((s) => ({ ...s, name, company: s.company.trim(), goal }));
+    if (!state.lgpdConsent) {
+      setError('Para continuar, marque o consentimento com a Política de Privacidade e Termos de Uso (LGPD).');
+      return;
+    }
+    const existing = loadCurrentConsent();
+    const audit = recordConsentDecision(
+      'form_briefing_consent',
+      existing?.categories ?? { functional: false, analytics: false, marketing: false },
+      `Consentimento explícito no formulário de briefing (Art. 7º, I e V da LGPD)`,
+    );
+    setState((s) => ({
+      ...s,
+      name,
+      company: s.company.trim(),
+      goal,
+      consentProtocol: audit.consentId,
+    }));
     goToStep(3);
   };
 
@@ -395,6 +415,60 @@ export function Brief({
                     style={[inputStyle, { minHeight: 96, textAlignVertical: 'top' }]}
                   />
 
+                  {/* Checkbox obrigatório NÃO pré-marcado (Conformidade LGPD Art. 7º, I e Art. 8º) */}
+                  <Pressable
+                    testID="brief-lgpd-consent"
+                    role="checkbox"
+                    aria-checked={Boolean(state.lgpdConsent)}
+                    onPress={() => setState((s) => ({ ...s, lgpdConsent: !s.lgpdConsent }))}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'flex-start',
+                      gap: 10,
+                      marginTop: 16,
+                      padding: 10,
+                      backgroundColor: '#e8eddc',
+                      borderRadius: 6,
+                      borderWidth: 1,
+                      borderColor: state.lgpdConsent ? '#2038ff' : '#ccd5be',
+                    }}
+                  >
+                    <View
+                      style={{
+                        width: 18,
+                        height: 18,
+                        borderRadius: 4,
+                        borderWidth: 1.5,
+                        borderColor: state.lgpdConsent ? C.blue : '#6c785b',
+                        backgroundColor: state.lgpdConsent ? C.blue : '#fff',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginTop: 2,
+                      }}
+                    >
+                      {state.lgpdConsent && <T style={{ color: '#fff', fontSize: 12, fontWeight: '900', lineHeight: 14 }}>✓</T>}
+                    </View>
+                    <T style={{ color: '#2b361f', fontSize: rem(0.72), lineHeight: rem(0.72) * 1.5, flex: 1 }}>
+                      Li e concordo com a{' '}
+                      <T
+                        role="link"
+                        onPress={() => openPrivacy('privacidade')}
+                        style={{ color: C.blue, textDecorationLine: 'underline', fontWeight: '700' }}
+                      >
+                        Política de Privacidade
+                      </T>{' '}
+                      e os{' '}
+                      <T
+                        role="link"
+                        onPress={() => openPrivacy('termos')}
+                        style={{ color: C.blue, textDecorationLine: 'underline', fontWeight: '700' }}
+                      >
+                        Termos de Uso
+                      </T>
+                      , e consinto com o tratamento dos dados informados para elaboração deste briefing comercial (Art. 7º, I e V da LGPD). *
+                    </T>
+                  </Pressable>
+
                   {!!error && (
                     <T testID="brief-error" role="alert" style={{ color: '#ad2a23', fontSize: rem(0.75), marginTop: 14 }}>
                       {error}
@@ -443,13 +517,14 @@ export function Brief({
                     Confira o resumo do projeto antes do próximo passo.
                   </T>
 
-                  <View style={{ marginVertical: 20 }}>
+                  <View style={{ marginVertical: 16 }}>
                     {[
                       ['O QUE VAMOS CRIAR', state.service],
                       ['SOBRE VOCÊ', `${state.name}${state.company ? ` · ${state.company}` : ''}`],
                       ['O DESAFIO', state.goal],
+                      ['REGISTRO DE CONSENTIMENTO LGPD', `Confirmado · Protocolo ${state.consentProtocol || 'Local'} (Política v${LEGAL.policyVersion})`],
                     ].map(([label, value]) => (
-                      <View key={label} style={{ paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: '#dbe1d2' }}>
+                      <View key={label} style={{ paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: '#dbe1d2' }}>
                         <T style={{ textTransform: 'uppercase', letterSpacing: 0.08 * rem(0.58), fontSize: rem(0.58), color: '#7e896f', marginBottom: 4 }}>
                           {label}
                         </T>
