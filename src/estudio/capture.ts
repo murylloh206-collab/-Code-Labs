@@ -7,7 +7,7 @@ export async function captureFrame(frame: HTMLIFrameElement, width: number, heig
   const node = doc.body;
   // Congela as animações: sem isso, a imagem sai com os elementos ainda invisíveis.
   const freeze = doc.createElement('style');
-  freeze.textContent = '*,*:before,*:after{animation:none !important;transition:none !important}';
+  freeze.textContent = '*,*:before,*:after{animation:none !important;transition:none !important}[data-r]{opacity:1 !important;transform:none !important;filter:none !important;translate:none !important}.fx-cur,.fx-glow,.fx-bar,.fx-conf{display:none !important}';
   doc.head.appendChild(freeze);
   const top = frame.contentWindow?.scrollY || 0;
   frame.contentWindow?.scrollTo(0, 0);

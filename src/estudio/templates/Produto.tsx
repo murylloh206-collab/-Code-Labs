@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { BASE_CSS, Brand, Icon, PhotoOr, PoweredBy, displayName, fonts, type TplProps } from './kit';
+import { Aurora, BASE_CSS, Brand, FloatCta, Marquee, Split, Icon, PhotoOr, PoweredBy, displayName, fonts, type TplProps } from './kit';
 
 export const css = fonts('Inter+Tight:wght@400;500;600;700;800') + BASE_CSS + `
 body{font-family:'Inter Tight',system-ui,sans-serif}
-.w{max-width:1200px;margin:0 auto;padding:0 26px}
+.w{max-width:1200px;margin:0 auto;padding:0 26px;position:relative;z-index:1}
+.out{-webkit-text-stroke:1.5px var(--fg);color:transparent;font-size:clamp(40px,7vw,86px);font-weight:800;letter-spacing:-.03em;text-transform:uppercase}
+.out+.out,.outl .mq-t span{font-size:clamp(44px,8vw,92px);font-weight:800;letter-spacing:-.03em;text-transform:uppercase;-webkit-text-stroke:1.5px var(--fg);color:transparent}.outl .mq-t span:nth-child(3n){color:var(--p);-webkit-text-stroke:0}
 .nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0}
 .nav nav{display:flex;gap:30px;font-size:13px;letter-spacing:.08em;font-weight:600}.nav nav a{text-decoration:none;opacity:.7}.nav nav a:hover{opacity:1}
 .hero{display:grid;grid-template-columns:230px 1fr 230px;gap:20px;align-items:center;padding:20px 0 40px}
@@ -33,6 +35,7 @@ export default function Produto({ cfg }: TplProps) {
   ];
   return (
     <>
+      <div style={{ position: 'relative', height: 0 }}><Aurora style={{ inset: '0 0 auto 0', height: 900 }} /></div>
       <div className="w">
         <header className="nav a1"><Brand cfg={cfg} /><nav><a href="#produto">PRODUTO</a><a href="#recursos">RECURSOS</a><a href="#duvidas">DÚVIDAS</a></nav><a className="b btn" href="#comprar" style={{ background: 'var(--fg)', color: 'var(--bg)', padding: '10px 18px', fontSize: 14 }}>Comprar</a></header>
         <section className="hero" id="produto">
@@ -43,7 +46,7 @@ export default function Produto({ cfg }: TplProps) {
             <a className="b btn a5" href="#comprar" style={{ background: 'var(--p)', color: 'var(--on-p)', alignSelf: 'flex-start' }}>Quero o meu <Icon name="arrow" size={16} /></a>
           </div>
           <div>
-            <h1 className="big dg">{name}</h1>
+            <h1 className="big"><Split text={name} delay={0.2} step={0.12} /></h1>
             <p className="a2" style={{ textAlign: 'center', fontSize: 19, marginTop: 10, color: 'var(--mut)' }}>Pensado para tudo o que você ama.</p>
             <div className="obj zm">
               <span className="sp" style={{ position: 'absolute', bottom: 10, width: 420, maxWidth: '96%', height: 120, borderRadius: '50%', border: '2px dashed color-mix(in srgb,var(--p) 50%,transparent)' }} />
@@ -61,6 +64,7 @@ export default function Produto({ cfg }: TplProps) {
         </section>
       </div>
 
+      <Marquee words={['Novo', 'Qualidade', name, 'Entrega rápida', 'Garantia', 'Design único']} speed={30} style={{ margin: '10px 0 30px', padding: '10px 0' }} className="outl" />
       <section id="recursos" className="w" style={{ padding: '60px 26px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 20, flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: 30 }}>
           <h2 className="rv" style={{ fontSize: 54, lineHeight: 1, margin: 0, fontWeight: 700, letterSpacing: '-.03em' }}>Inovação.<br />Em cada <span style={{ color: 'var(--mut)' }}>detalhe.</span></h2>
@@ -89,6 +93,7 @@ export default function Produto({ cfg }: TplProps) {
         </div>
       </section>
 
+      <FloatCta label="Quero o meu" />
       <footer id="comprar" style={{ background: 'var(--ink)', color: 'var(--on-ink)', overflow: 'hidden' }}>
         <div className="w" style={{ padding: '50px 26px 0', display: 'flex', justifyContent: 'space-between', gap: 20, flexWrap: 'wrap', alignItems: 'center' }}>
           <div><div style={{ fontSize: 30, fontWeight: 700 }}>Pronto para ter o seu?</div><div style={{ opacity: 0.7 }}>Garanta agora com condições especiais.</div></div>

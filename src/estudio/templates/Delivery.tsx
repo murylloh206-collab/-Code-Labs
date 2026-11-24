@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BASE_CSS, Brand, Icon, PhotoOr, PoweredBy, displayName, fonts, type TplProps } from './kit';
+import { Aurora, BASE_CSS, Brand, FloatCta, Marquee, Split, Icon, PhotoOr, PoweredBy, displayName, fonts, type TplProps } from './kit';
 
 export const css = fonts('Anton', 'Poppins:wght@400;500;600;700') + BASE_CSS + `
 body{font-family:'Poppins',system-ui,sans-serif}
@@ -70,7 +70,8 @@ export default function Delivery({ cfg }: TplProps) {
   const add = () => { setCart((c) => c + 1); setBump((b) => b + 1); };
   return (
     <>
-      <div className="w">
+      <div style={{ position: 'relative', height: 0 }}><Aurora style={{ inset: '0 0 auto 0', height: 820 }} /></div>
+      <div className="w" style={{ position: 'relative', zIndex: 1 }}>
         <header className="nav a1">
           <Brand cfg={cfg} />
           <nav><a href="#cardapio">Cardápio</a><a href="#combos">Combos</a><a href="#sobre">Sobre</a><a href="#contato">Contato</a></nav>
@@ -78,7 +79,7 @@ export default function Delivery({ cfg }: TplProps) {
         </header>
         <section className="hg">
           <div>
-            <h1 className="dis h1 dg" style={{ fontSize: 104, margin: 0 }}>{cfg.slogan ? cfg.slogan : <>Feito<br /><span style={{ color: 'var(--p-text)' }}>melhor.</span></>}</h1>
+            <h1 className="dis h1" style={{ fontSize: 104, margin: 0 }}>{cfg.slogan ? <Split text={cfg.slogan} /> : <><Split text="Feito" /><br /><Split text="melhor." delay={0.55} cls="shine" /></>}</h1>
             <p className="a3" style={{ fontSize: 18, fontWeight: 500, marginTop: 20, maxWidth: 430 }}>Os favoritos da {name}, preparados na hora e entregues quentinhos na sua casa.</p>
             <div className="a4" style={{ display: 'flex', gap: 12, marginTop: 24, flexWrap: 'wrap' }}>
               <a className="b btn" href="#cardapio" style={{ background: 'var(--p)', color: 'var(--on-p)' }}>Ver cardápio</a>
@@ -98,6 +99,7 @@ export default function Delivery({ cfg }: TplProps) {
         </section>
       </div>
 
+      <div style={{ background: 'var(--ink)', color: 'var(--on-ink)', transform: 'rotate(-1.6deg)', margin: '30px -10px 40px', padding: '16px 0', boxShadow: '0 20px 40px -20px rgba(0,0,0,.5)', position: 'relative', zIndex: 2 }}><Marquee words={['Peça agora', 'Quentinho', 'Entrega rápida', name, 'Ingredientes frescos', 'Sabor de verdade']} speed={26} style={{ fontFamily: "Anton,sans-serif", fontSize: 34, letterSpacing: '.04em', textTransform: 'uppercase' }} /></div>
       <section id="cardapio" className="w" style={{ paddingTop: 30, paddingBottom: 60 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 16, flexWrap: 'wrap' }}>
           <h2 className="dis rv" style={{ fontSize: 44, margin: 0 }}>— Nosso <span style={{ color: 'var(--p-text)' }}>cardápio</span> —</h2>
@@ -137,6 +139,7 @@ export default function Delivery({ cfg }: TplProps) {
         ))}
       </section>
 
+      <FloatCta label="Pedir agora" left />
       <footer id="contato" style={{ background: 'var(--p)', color: 'var(--on-p)' }}>
         <div className="w" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 20, flexWrap: 'wrap', padding: '40px 26px' }}>
           <div><div className="dis" style={{ fontSize: 40 }}>Bateu a fome?</div><div style={{ fontWeight: 600, marginTop: 6 }}>Peça pelo site ou chame a {name} no WhatsApp.</div></div>

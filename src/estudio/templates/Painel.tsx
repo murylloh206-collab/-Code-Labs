@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BASE_CSS, Icon, Logo, PoweredBy, displayName, fonts, type TplProps } from './kit';
 
 export const css = fonts('Sora:wght@300;400;500;600;700') + BASE_CSS + `
@@ -20,6 +20,12 @@ table{width:100%;border-collapse:collapse;font-size:13px}th{text-align:left;font
 .ln{stroke-dasharray:1200;animation:draw 2s .3s cubic-bezier(.2,.7,.2,1) both}
 @media (max-width:980px){.app{grid-template-columns:1fr}.sb{flex-direction:row;flex-wrap:wrap;align-items:center}.tiles{grid-template-columns:repeat(6,1fr);flex:1}.g3,.top{grid-template-columns:1fr}.mini{grid-template-columns:repeat(2,1fr)}.hide{display:none}}
 @media (max-width:520px){.tiles{grid-template-columns:repeat(3,1fr)}}
+.toast{position:fixed;right:18px;bottom:18px;z-index:60;display:flex;gap:12px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 16px 14px;box-shadow:0 24px 50px -18px rgba(0,0,0,.4);overflow:hidden;max-width:300px;animation:tin .6s cubic-bezier(.2,.9,.3,1.3) both,tout .5s 3.6s ease-in forwards}
+.tbar{position:absolute;left:0;bottom:0;height:3px;width:100%;background:var(--p);transform-origin:0 50%;animation:tb 4s linear both}
+@keyframes tin{from{transform:translateX(120%) scale(.9);opacity:0}}
+@keyframes tout{to{transform:translateY(20px) scale(.95);opacity:0}}
+@keyframes tb{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+@media (max-width:700px){.toast{left:12px;right:12px;max-width:none}}
 `;
 
 export default function Painel({ cfg }: TplProps) {
@@ -38,6 +44,18 @@ export default function Painel({ cfg }: TplProps) {
     [['Promoção de fim de mês', 'Divulgar no Instagram', 'Sexta'], ['Aniversário de cliente', 'Enviar cupom', 'Sábado']],
   ][tab];
   const gauge = 0.8;
+  const feed = [
+    ['users', 'Novo cliente cadastrado', 'Mariana Costa acabou de entrar'],
+    ['box', 'Pedido recebido', '#3571 · 2 itens · R$ 148,00'],
+    ['calendar', 'Agendamento confirmado', 'Hoje às 15:30 com Ricardo'],
+    ['bell', 'Meta do mês', 'Você já bateu 80% da meta'],
+  ];
+  const [ev, setEv] = useState(-1);
+  useEffect(() => {
+    const t = window.setInterval(() => setEv((e) => (e + 1) % feed.length), 4200);
+    const f = window.setTimeout(() => setEv(0), 2600);
+    return () => { window.clearInterval(t); window.clearTimeout(f); };
+  }, []);
   return (
     <div className="app">
       <aside className="sb a1">
@@ -125,6 +143,13 @@ export default function Painel({ cfg }: TplProps) {
         </section>
         <div style={{ color: 'var(--mut)' }}><PoweredBy accent="var(--p)" /></div>
       </main>
+      {ev >= 0 && (
+        <div key={ev} data-nofx="" className="toast">
+          <span style={{ width: 40, height: 40, borderRadius: 12, background: 'var(--p)', color: 'var(--on-p)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Icon name={feed[ev][0]} size={18} /></span>
+          <div><b style={{ fontSize: 13 }}>{feed[ev][1]}</b><div style={{ fontSize: 12, color: 'var(--mut)', marginTop: 2 }}>{feed[ev][2]}</div></div>
+          <i className="tbar" />
+        </div>
+      )}
     </div>
   );
 }

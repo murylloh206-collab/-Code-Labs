@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BASE_CSS, Brand, Icon, PhotoOr, PoweredBy, displayName, fonts, type TplProps } from './kit';
+import { Aurora, BASE_CSS, Brand, FloatCta, Marquee, Split, Icon, PhotoOr, PoweredBy, displayName, fonts, type TplProps } from './kit';
 
 export const css = fonts('Archivo:wdth,wght@75..125,400..900') + BASE_CSS + `
 body{font-family:'Archivo',system-ui,sans-serif}
@@ -23,6 +23,7 @@ body{font-family:'Archivo',system-ui,sans-serif}
 .sz{display:flex;gap:4px;margin-top:8px}.sz span{border:1px solid var(--line);font-size:11px;padding:3px 7px}
 .split{display:grid;grid-template-columns:1fr 1fr;min-height:420px}
 @media (max-width:860px){.nav nav{display:none}.nav{grid-template-columns:auto 1fr}.nav>div:first-child{display:none}.H{font-size:46px}.hero{height:520px}.cats,.split{grid-template-columns:1fr}.cat{height:240px}.prods{grid-template-columns:repeat(2,1fr)}.pc .im{height:230px}}
+.outm .mq-t span{font-stretch:125%;font-size:clamp(40px,7vw,82px);font-weight:900;letter-spacing:-.02em;text-transform:uppercase;-webkit-text-stroke:1.5px var(--fg);color:transparent}.outm .mq-t span:nth-child(2n){color:var(--p);-webkit-text-stroke:0}
 `;
 
 function Garment({ k, color }: { k: number; color: string }) {
@@ -66,6 +67,7 @@ export default function Moda({ cfg }: TplProps) {
       </div>
 
       <section className="hero">
+        <Aurora />
         <div style={{ position: 'absolute', inset: 0 }}>
           <PhotoOr cfg={cfg} style={{ objectPosition: 'right center' }} fallback={
             <>
@@ -76,7 +78,7 @@ export default function Moda({ cfg }: TplProps) {
           } />
         </div>
         <div className="w ht" style={{ right: 0 }}>
-          <h1 className="H dg" style={{ maxWidth: 620, color: cfg.photo ? '#fff' : 'var(--fg)', textShadow: cfg.photo ? '0 2px 30px rgba(0,0,0,.4)' : 'none' }}>{cfg.slogan || 'Estilo em cada movimento'}</h1>
+          <h1 className="H" style={{ maxWidth: 620, color: cfg.photo ? '#fff' : 'var(--fg)', textShadow: cfg.photo ? '0 2px 30px rgba(0,0,0,.4)' : 'none' }}><Split text={cfg.slogan || 'Estilo em cada movimento'} step={0.12} /></h1>
           <p className="a3" style={{ marginTop: 16, fontSize: 17, color: cfg.photo ? '#fff' : 'var(--mut)' }}>A nova coleção da {name} chegou.</p>
           <div className="a4" style={{ display: 'flex', gap: 12, marginTop: 24, flexWrap: 'wrap' }}>
             <a className="b btn" href="#loja" style={{ background: 'var(--fg)', color: 'var(--bg)' }}>COMPRAR AGORA</a>
@@ -85,6 +87,7 @@ export default function Moda({ cfg }: TplProps) {
         </div>
       </section>
 
+      <Marquee words={['Nova coleção', name, 'Frete grátis', 'Troca fácil', 'Edição limitada']} speed={28} style={{ padding: '22px 0 0' }} className="outm" />
       <section id="loja" className="w" style={{ padding: '60px 26px 20px' }}>
         <h2 className="rv" style={{ fontStretch: '115%', fontWeight: 900, fontSize: 32, margin: '0 0 22px' }}>COMPRE POR CATEGORIA</h2>
         <div className="cats">
@@ -141,6 +144,7 @@ export default function Moda({ cfg }: TplProps) {
         </div>
       </section>
 
+      <FloatCta label="Chamar no WhatsApp" />
       <footer style={{ background: 'var(--ink)', color: 'var(--on-ink)' }}>
         <div className="w" style={{ padding: '34px 26px', display: 'flex', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', alignItems: 'center' }}>
           <Brand cfg={cfg} size={30} /><span style={{ opacity: 0.7, fontSize: 13 }}>© {new Date().getFullYear()} {name}</span>

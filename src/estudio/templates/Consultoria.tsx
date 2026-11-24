@@ -1,5 +1,5 @@
 import React from 'react';
-import { BASE_CSS, Brand, Icon, PhotoOr, PoweredBy, displayName, fonts, type TplProps } from './kit';
+import { Aurora, BASE_CSS, Brand, FloatCta, Marquee, Split, Icon, PhotoOr, PoweredBy, displayName, fonts, type TplProps } from './kit';
 
 export const css = fonts('DM+Sans:wght@400;500;700;800') + BASE_CSS + `
 body{font-family:'DM Sans',system-ui,sans-serif}
@@ -34,7 +34,8 @@ export default function Consultoria({ cfg }: TplProps) {
   ];
   return (
     <>
-      <section className="hero">
+      <section className="hero hasaur">
+        <Aurora />
         <div className="w">
           <header className="nav a1">
             <Brand cfg={cfg} />
@@ -44,7 +45,7 @@ export default function Consultoria({ cfg }: TplProps) {
           <div className="hg" id="inicio">
             <div>
               <span className="chip a1" style={{ background: 'rgba(255,255,255,.06)', color: 'var(--p)' }}>Bem-vindo à {name}</span>
-              <h1 className="h1 dg">{cfg.slogan || 'Experiência que vira resultado para o seu negócio'}</h1>
+              <h1 className="h1"><Split text={cfg.slogan || 'Experiência que vira resultado para o seu negócio'} /></h1>
               <p className="a3" style={{ fontSize: 17, lineHeight: 1.6, opacity: 0.78, maxWidth: 470, marginTop: 18 }}>Atendimento sob medida, do primeiro contato à entrega. Conte o que você precisa e a gente cuida do resto.</p>
               <div className="a4" style={{ display: 'flex', gap: 14, alignItems: 'center', marginTop: 28, flexWrap: 'wrap' }}>
                 <a className="pill btn" href="#contato" style={{ background: 'var(--p)', color: 'var(--on-p)' }}>Começar agora <Icon name="arrow" size={16} /></a>
@@ -85,6 +86,7 @@ export default function Consultoria({ cfg }: TplProps) {
             </div>
           </div>
         </div>
+        <Marquee words={['Atendimento próximo', 'Processos claros', 'Resultados reais', name, 'Equipe dedicada', 'Metas combinadas']} speed={34} style={{ marginTop: 56, fontSize: 22, fontWeight: 700, color: 'rgba(255,255,255,.88)', borderTop: '1px solid rgba(255,255,255,.12)', borderBottom: '1px solid rgba(255,255,255,.12)', padding: '18px 0' }} />
       </section>
 
       <div className="w strip">
@@ -120,7 +122,7 @@ export default function Consultoria({ cfg }: TplProps) {
 
       <section className="w stats">
         {[['10+', 'Anos de mercado'], ['500+', 'Clientes atendidos'], ['98%', 'Recomendariam'], ['24h', 'Para responder']].map(([n, l]) => (
-          <div key={l} className="rv"><div style={{ fontSize: 46, fontWeight: 700 }}>{n}<span style={{ color: 'var(--p)' }}>+</span></div><div style={{ color: 'var(--mut)', fontSize: 14 }}>{l}</div></div>
+          <div key={l} className="rv"><div style={{ fontSize: 46, fontWeight: 700 }}>{n}</div><div style={{ color: 'var(--mut)', fontSize: 14 }}>{l}</div></div>
         ))}
       </section>
 
@@ -145,6 +147,7 @@ export default function Consultoria({ cfg }: TplProps) {
           <a className="pill btn" href="#contato" style={{ background: 'var(--ink)', color: 'var(--on-ink)', animation: 'pulse 2.4s infinite' }}><Icon name="chat" size={18} /> Chamar no WhatsApp</a>
         </div>
       </section>
+      <FloatCta />
       <footer style={{ background: 'var(--ink)', color: 'var(--on-ink)' }}>
         <div className="w" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '30px 28px', gap: 16, flexWrap: 'wrap' }}>
           <Brand cfg={cfg} size={32} />

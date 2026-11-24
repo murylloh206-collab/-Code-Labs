@@ -83,9 +83,84 @@ section,header,main,aside,footer,div{min-width:0}h1,h2,h3{overflow-wrap:break-wo
 .lift:hover{transform:translateY(-6px);box-shadow:0 24px 50px -24px rgba(0,0,0,.35)}
 .btn{transition:transform .2s,filter .2s}.btn:hover{transform:translateY(-2px);filter:brightness(1.06)}
 .bump{animation:bump .4s}
-@supports (animation-timeline: view()){.rv{animation:up linear both;animation-timeline:view();animation-range:entry 0% cover 22%}}
+
+.hasaur{position:relative;overflow:hidden}.hasaur>*:not(.aur){position:relative;z-index:1}
+.aur{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+.aur i{position:absolute;width:48vmax;height:48vmax;border-radius:50%;filter:blur(80px);opacity:.5}
+.aur i:nth-child(1){background:var(--p);left:-12vmax;top:-18vmax;animation:aur1 16s ease-in-out infinite alternate}
+.aur i:nth-child(2){background:var(--s);right:-14vmax;top:-6vmax;opacity:.38;animation:aur2 20s ease-in-out infinite alternate}
+.aur i:nth-child(3){background:var(--p);left:34%;bottom:-26vmax;opacity:.3;animation:aur3 24s ease-in-out infinite alternate}
+.aur b{position:absolute;inset:0;background-image:linear-gradient(color-mix(in srgb,var(--fg) 7%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--fg) 7%,transparent) 1px,transparent 1px);background-size:56px 56px;-webkit-mask-image:radial-gradient(ellipse 70% 70% at 50% 40%,#000,transparent);mask-image:radial-gradient(ellipse 70% 70% at 50% 40%,#000,transparent);animation:grid 12s linear infinite}
+.aur u{position:absolute;width:6px;height:6px;border-radius:50%;background:var(--p);box-shadow:0 0 14px var(--p);opacity:.8;animation:rise linear infinite}
+@keyframes aur1{to{transform:translate(18vmax,12vmax) scale(1.2)}}
+@keyframes aur2{to{transform:translate(-16vmax,16vmax) scale(.85)}}
+@keyframes aur3{to{transform:translate(-20vmax,-10vmax) scale(1.25)}}
+@keyframes grid{to{background-position:56px 56px,56px 56px}}
+@keyframes rise{from{transform:translateY(0) scale(.6);opacity:0}15%{opacity:.9}to{transform:translateY(-70vh) scale(1.2);opacity:0}}
+@keyframes swin{from{transform:translateY(115%) rotate(7deg);opacity:0}to{transform:none;opacity:1}}
+@keyframes shine{to{background-position:200% center}}
+@keyframes wob{0%,100%{transform:rotate(-8deg) scale(1)}50%{transform:rotate(8deg) scale(1.08)}}
+.sw{display:inline-block;overflow:hidden;vertical-align:top;padding:.04em .02em .14em;margin-bottom:-.14em}
+.sw>span{display:inline-block;animation:swin 1.1s cubic-bezier(.2,.8,.2,1) backwards;animation-delay:var(--sd,0ms)}
+.shine{background:linear-gradient(100deg,var(--p-text) 20%,var(--s) 40%,var(--p-text) 60%,var(--p-text) 80%);background-size:200% auto;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;animation:shine 5s linear infinite}
+.mq{overflow:hidden;white-space:nowrap;-webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+.mq-t{display:inline-flex;align-items:center;width:max-content;animation:marq linear infinite}
+.mq-t span{display:inline-flex;align-items:center;gap:34px;padding-right:34px}
+.mq-t i{width:14px;height:14px;background:var(--p);transform:rotate(45deg);flex-shrink:0;border-radius:3px;animation:spin 6s linear infinite}
+.mq:hover .mq-t{animation-play-state:paused}
+.wa{position:fixed;right:18px;bottom:18px;z-index:50;width:58px;height:58px;border-radius:50%;background:var(--p);color:var(--on-p);display:flex;align-items:center;justify-content:center;text-decoration:none;box-shadow:0 14px 34px -8px color-mix(in srgb,var(--p) 70%,#000);animation:pulse 2.4s infinite,fup .8s 2.2s cubic-bezier(.2,.9,.3,1.4) backwards}
+.wa:hover{transform:scale(1.1) rotate(-6deg)}.wa{transition:transform .25s}
+.wa b{position:absolute;right:68px;background:var(--fg);color:var(--bg);font:600 13px/1 system-ui,sans-serif;padding:10px 14px;border-radius:12px;white-space:nowrap;opacity:0;transform:translateX(10px);transition:.25s;pointer-events:none}
+.wa:hover b{opacity:1;transform:none}
+@keyframes fup{from{transform:translateY(120px) scale(.4);opacity:0}}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01s !important;animation-iteration-count:1 !important;transition:none !important}}
 `;
+
+/** Fundo animado: manchas de cor flutuando, grade em movimento e partículas subindo. */
+export function Aurora({ style }: { style?: React.CSSProperties }) {
+  return (
+    <div className="aur" aria-hidden="true" style={style}>
+      <i /><i /><i /><b />
+      {[8, 22, 37, 51, 66, 79, 91].map((l, i) => <u key={l} style={{ left: `${l}%`, bottom: `${(i * 13) % 30}%`, animationDuration: `${7 + (i % 4) * 2.5}s`, animationDelay: `${i * 0.9}s` }} />)}
+    </div>
+  );
+}
+
+/** Texto que entra palavra por palavra (de baixo para cima). */
+export function Split({ text, delay = 0.25, step = 0.09, cls = '' }: { text: string; delay?: number; step?: number; cls?: string }) {
+  return (
+    <>
+      {text.split(/\s+/).filter(Boolean).map((w, i, a) => (
+        <React.Fragment key={i}>
+          <span className="sw"><span className={cls} style={{ ['--sd' as string]: `${Math.round((delay + i * step) * 1000)}ms` } as React.CSSProperties}>{w}</span></span>
+          {i < a.length - 1 ? ' ' : null}
+        </React.Fragment>
+      ))}
+    </>
+  );
+}
+
+/** Faixa de palavras que corre sem parar. */
+export function Marquee({ words, speed = 32, style, rev = false, className = '' }: { words: string[]; speed?: number; style?: React.CSSProperties; rev?: boolean; className?: string }) {
+  const list = [...words, ...words, ...words, ...words];
+  return (
+    <div className={`mq ${className}`} style={style} data-nofx="">
+      <div className="mq-t" style={{ animationDuration: `${speed}s`, animationDirection: rev ? 'reverse' : 'normal' }}>
+        {list.map((w, i) => <span key={i}>{w}<i /></span>)}
+      </div>
+    </div>
+  );
+}
+
+/** Botão flutuante de WhatsApp, sempre visível. */
+export function FloatCta({ label = 'Fale com a gente', left = false }: { label?: string; left?: boolean }) {
+  return (
+    <a className="wa" href="#contato" data-nofx="" aria-label={label} style={left ? { right: 'auto', left: 18 } : undefined}>
+      <b>{label}</b>
+      <Icon name="chat" size={26} />
+    </a>
+  );
+}
 
 export function fonts(...families: string[]) {
   return `@import url("https://fonts.googleapis.com/css2?${families.map((f) => 'family=' + f).join('&')}&display=swap");`;

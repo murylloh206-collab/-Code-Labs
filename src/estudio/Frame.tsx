@@ -2,6 +2,7 @@ import React, { forwardRef, useEffect, useImperativeHandle, useRef } from 'react
 import { createRoot, type Root } from 'react-dom/client';
 import { themeVars, type Cfg } from './templates/kit';
 import { byId } from './templates';
+import { startFx } from './fx';
 
 /** Renderiza o modelo escolhido com as cores e dados do cliente. */
 export function TemplateView({ cfg }: { cfg: Cfg }) {
@@ -32,12 +33,22 @@ export const SiteFrame = forwardRef<HTMLIFrameElement | null, Props>(function Si
     const doc = frame?.contentDocument;
     if (!frame || !doc) return;
     doc.open();
-    doc.write('<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body><div id="r"></div></body></html>');
+    doc.write('<!doctype html><html lang="pt-BR" class="fx fx-wait"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body><div id="r"></div></body></html>');
     doc.close();
     const r = createRoot(doc.getElementById('r') as HTMLElement);
     root.current = r;
     r.render(<TemplateView cfg={cfgRef.current} />);
+    let stop: (() => void) | null = null;
+    const t = window.setTimeout(() => {
+      try {
+        stop = startFx(doc, { name: cfgRef.current.name.trim() || 'Seu Negócio', intro: true, tilt: cfgRef.current.type !== 'sistema' });
+      } catch {
+        doc.documentElement.classList.remove('fx-wait');
+      }
+    }, 80);
     return () => {
+      window.clearTimeout(t);
+      stop?.();
       root.current = null;
       setTimeout(() => r.unmount(), 0);
     };
