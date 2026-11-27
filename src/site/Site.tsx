@@ -5,6 +5,7 @@ import Dashboard from './Dashboard';
 import { SITE } from './config';
 import Estudio from '../estudio/Estudio';
 import Previa from '../estudio/Previa';
+import { satisfactionTick, startClickTracking, startQualityTracking, trackEvent } from './track';
 
 type Route = 'home' | 'portfolio' | 'painel' | 'estudio' | 'previa';
 
@@ -44,6 +45,20 @@ export default function Site({ onLegal, onCookies }: Props) {
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
+
+  // pixel: visita por página e cliques (só com consentimento de estatísticas)
+  useEffect(() => {
+    if (route === 'previa') return;
+    trackEvent('view', route);
+    if (route === 'estudio') trackEvent('estudio_open', 'estudio');
+    satisfactionTick(route);
+  }, [route]);
+  useEffect(() => startQualityTracking(() => readRoute()), []);
+  useEffect(() => {
+    let page = route;
+    page = readRoute();
+    return startClickTracking(() => readRoute() || page);
+  }, [route]);
 
   useEffect(() => {
     document.title = TITLES[route];

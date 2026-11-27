@@ -1,5 +1,6 @@
 // @ts-nocheck
 /* Gerado a partir do design "Criativo" (canvas Site Code Labs). */
+import { trackLead } from './track';
 import React from 'react';
 import { S } from './styleString';
 
@@ -112,6 +113,7 @@ class CriativoView extends React.Component<any, any> {
         if (st.qStep === 2) {
           if (!st.qName.trim()) { self.setState({ qError: 'Escreva seu nome para continuar.' }); return; }
           if (st.qGoal.trim().length < 10) { self.setState({ qError: 'Conte um pouquinho mais sobre o que você precisa.' }); return; }
+          trackLead({ empresa: (st.qBiz || '').trim() || st.qName.trim(), contato: st.qName.trim(), interesse: st.qService, origem: 'orcamento', resumo: st.qGoal.trim(), respostas: [{ k: 'Serviço', v: st.qService }, { k: 'Objetivo', v: st.qGoal.trim() }] });
         }
         self.setState({ qStep: Math.min(3, st.qStep + 1), qError: '' });
       },

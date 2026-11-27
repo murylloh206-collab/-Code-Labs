@@ -3,6 +3,7 @@ import { SiteFrame } from './Frame';
 import { TEMPLATES, TYPES, byId, forType } from './templates';
 import { DEFAULT_CFG, Icon, type Cfg, type TypeId } from './templates/kit';
 import { extractPalette, hexToHsl, hslToHex } from './color';
+import { trackEvent, trackLead } from '../site/track';
 import { canShareFile, captureFrame, downloadBlob, fileToDataUrl, shareFile, waLink } from './capture';
 import { SITE } from '../site/config';
 
@@ -211,6 +212,12 @@ export default function Estudio() {
 
   const openQuote = async () => {
     setModal(true);
+    trackEvent('estudio_quote', 'estudio');
+    trackLead({
+      empresa: cfg.name.trim() || 'Sem nome (Estúdio)', interesse: typeLabel, origem: 'estudio', modelo: tpl.id, cores: cfg.colors,
+      resumo: `Montou um site no Estúdio (modelo ${tpl.name}, estilo ${cfg.look}) e pediu orçamento.`,
+      respostas: [{ k: 'Modelo escolhido', v: `${tpl.name} (${typeLabel})` }, { k: 'Estilo', v: cfg.look === 'escuro' ? 'Escuro e marcante' : 'Claro e leve' }, { k: 'Cor principal', v: cfg.colors[0] }, { k: 'Enviou logo', v: cfg.logo ? 'Sim' : 'Não' }, { k: 'Frase de destaque', v: cfg.slogan || '—' }],
+    });
     if (shot.url) URL.revokeObjectURL(shot.url);
     setShot({ blob: null, url: null, busy: true });
     const f = frameRef.current;
